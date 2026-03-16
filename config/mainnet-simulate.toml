@@ -1,0 +1,34 @@
+# Mainnet Simulate Configuration
+# For dry-run testing with real mainnet pool data
+# ⚠️ No actual transactions are sent!
+
+[general]
+log_level = "debug"
+network = "mainnet-simulate"
+
+[rpc]
+# Mainnet RPC for reading pool data
+primary_url = "https://api.mainnet-beta.solana.com"
+fallback_urls = []
+timeout_ms = 15000
+max_retries = 3
+
+[redis]
+url = "redis://localhost:6379"
+pool_size = 10
+cache_ttl_ms = 500
+
+[strategy]
+# Lower thresholds for testing
+min_profit_bps = 1
+max_slippage_bps = 100
+max_hops = 3
+min_liquidity_usd = 1000
+
+[execution]
+compute_unit_price = 5000
+compute_unit_limit = 400000
+use_jito = false
+jito_tip_lamports = 0
+
+

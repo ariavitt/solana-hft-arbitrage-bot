@@ -1,0 +1,24 @@
+[package]
+name = "pool-poller"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "RPC poller for DEX pool data"
+
+[dependencies]
+bot-core = { path = "../bot-core" }
+rpc-proxy = { path = "../rpc-proxy" }
+pool-deserializer = { path = "../pool-deserializer" }
+solana-sdk.workspace = true
+solana-client.workspace = true
+tokio.workspace = true
+futures.workspace = true
+async-trait.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+anyhow.workspace = true
+tracing.workspace = true
+metrics.workspace = true
+reqwest.workspace = true
+

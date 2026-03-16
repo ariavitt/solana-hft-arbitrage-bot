@@ -1,0 +1,15 @@
+[package]
+name = "pool-deserializer"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+bot-core = { path = "../bot-core" }
+solana-sdk.workspace = true
+borsh.workspace = true
+serde.workspace = true
+thiserror.workspace = true
+anyhow.workspace = true
+tracing.workspace = true
+

@@ -1,0 +1,56 @@
+[package]
+name = "arb-bot"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Solana HFT Arbitrage Bot"
+
+[[bin]]
+name = "arb-bot"
+path = "src/main.rs"
+
+[dependencies]
+# Internal crates
+bot-core = { path = "../bot-core" }
+rpc-proxy = { path = "../rpc-proxy" }
+pool-deserializer = { path = "../pool-deserializer" }
+pool-poller = { path = "../pool-poller" }
+pricing-engine = { path = "../pricing-engine" }
+strategy = { path = "../strategy" }
+tx-builder = { path = "../tx-builder" }
+
+# Solana
+solana-sdk.workspace = true
+solana-client.workspace = true
+
+# Async
+tokio.workspace = true
+futures.workspace = true
+
+# Config & CLI
+clap.workspace = true
+config.workspace = true
+
+# Serialization
+serde.workspace = true
+serde_json.workspace = true
+toml.workspace = true
+
+# Logging
+tracing.workspace = true
+tracing-subscriber.workspace = true
+
+# Metrics
+metrics.workspace = true
+metrics-exporter-prometheus.workspace = true
+
+# Error handling
+anyhow.workspace = true
+thiserror.workspace = true
+
+# Utils
+chrono.workspace = true
+shellexpand = "3.1"
+
+# Web dashboard
+hyper = { version = "0.14", features = ["server", "http1", "tcp"] }

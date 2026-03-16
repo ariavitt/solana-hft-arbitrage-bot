@@ -1,0 +1,18 @@
+[package]
+name = "pricing-engine"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+bot-core = { path = "../bot-core" }
+solana-sdk.workspace = true
+uint.workspace = true
+num-bigint.workspace = true
+num-traits.workspace = true
+serde.workspace = true
+thiserror.workspace = true
+anyhow.workspace = true
+tracing.workspace = true
+parking_lot.workspace = true
+

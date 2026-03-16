@@ -1,0 +1,19 @@
+[package]
+name = "bot-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+solana-sdk.workspace = true
+borsh.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+anyhow.workspace = true
+tracing.workspace = true
+config.workspace = true
+toml.workspace = true
+chrono.workspace = true
+uuid.workspace = true
+

@@ -1,0 +1,24 @@
+[package]
+name = "rpc-proxy"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+bot-core = { path = "../bot-core" }
+solana-sdk.workspace = true
+solana-client.workspace = true
+solana-rpc-client.workspace = true
+solana-rpc-client-api.workspace = true
+tokio.workspace = true
+futures.workspace = true
+async-trait.workspace = true
+redis.workspace = true
+deadpool-redis.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+anyhow.workspace = true
+tracing.workspace = true
+metrics.workspace = true
+

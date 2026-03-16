@@ -1,0 +1,46 @@
+# Devnet Configuration
+# Для локальной разработки и тестирования
+
+[general]
+log_level = "debug"
+network = "devnet"
+
+[rpc]
+# Публичный Solana devnet RPC (бесплатный)
+# Лимит: ~40 req/s, достаточно для разработки
+primary_url = "https://api.devnet.solana.com"
+
+# Резервные RPC (опционально)
+# Раскомментируй и добавь свой Helius API ключ для fallback:
+# fallback_urls = ["https://devnet.helius-rpc.com/?api-key=YOUR_KEY"]
+fallback_urls = []
+
+# Таймаут и retry настройки
+timeout_ms = 15000
+max_retries = 3
+
+[redis]
+url = "redis://localhost:6379"
+pool_size = 10
+# TTL кэша в ms (500ms для devnet - нормально)
+cache_ttl_ms = 500
+
+[strategy]
+# Минимальный профит в базисных пунктах (10 bps = 0.1%)
+min_profit_bps = 10
+# Максимальный slippage в базисных пунктах
+max_slippage_bps = 100
+# Максимум хопов в маршруте
+max_hops = 3
+# Минимальная ликвидность в USD
+min_liquidity_usd = 1000
+
+[execution]
+# Цена compute unit в microlamports
+compute_unit_price = 1000
+# Лимит compute units
+compute_unit_limit = 400000
+# Использовать Jito bundle (false для devnet)
+use_jito = false
+jito_tip_lamports = 0
+

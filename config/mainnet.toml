@@ -1,0 +1,54 @@
+# Mainnet Configuration
+# ⚠️  ВНИМАНИЕ: Используй только с реальными средствами, которые готов потерять!
+
+[general]
+log_level = "info"
+network = "mainnet-beta"
+
+[rpc]
+# ВАЖНО: Публичный RPC имеет жёсткие лимиты
+# Для HFT обязателен платный RPC:
+# - Helius (https://helius.dev) - от $49/мес
+# - Triton (https://triton.one) - для серьёзного HFT
+# - QuickNode VIP tier
+# - Собственный валидатор
+
+# Замени на свой RPC endpoint:
+primary_url = "https://api.mainnet-beta.solana.com"
+
+# Резервные RPC для fallback
+fallback_urls = [
+    # "https://mainnet.helius-rpc.com/?api-key=YOUR_KEY",
+    # "https://your-triton-endpoint.com"
+]
+
+# Таймаут - короче для mainnet (HFT критично!)
+timeout_ms = 5000
+max_retries = 2
+
+[redis]
+url = "redis://localhost:6379"
+# Больший пул для mainnet
+pool_size = 20
+# Короткий TTL - цены меняются быстро
+cache_ttl_ms = 100
+
+[strategy]
+# Минимальный профит в базисных пунктах (10 bps = 0.1%)
+min_profit_bps = 10
+# Строгий slippage для mainnet
+max_slippage_bps = 30
+# Максимум хопов
+max_hops = 3
+# Минимальная ликвидность - выше для mainnet
+min_liquidity_usd = 50000
+
+[execution]
+# Высокий priority fee для mainnet
+compute_unit_price = 10000
+compute_unit_limit = 400000
+# Jito bundle - ОБЯЗАТЕЛЬНО для mainnet MEV защиты
+use_jito = true
+# Tip для Jito validator (в lamports)
+jito_tip_lamports = 10000
+
