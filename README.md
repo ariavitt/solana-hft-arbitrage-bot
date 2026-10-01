@@ -1,76 +1,30 @@
 # Solana HFT Arbitrage Bot
 
-> High-Frequency Trading / Arbitrage / Swap Bot для Solana blockchain
+> A high-frequency trading, arbitrage, and swap bot for the Solana blockchain.
 
-## Обзор
+## Overview
 
-Высокочастотный бот для арбитража на DEX Solana с минимальной задержкой и атомарным исполнением сделок.
+A low-latency bot for arbitrage across Solana decentralized exchanges (DEXs), designed to execute trades atomically.
 
-## Архитектура
+## Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                              INFRA (Инфраструктура)                         │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐                       │
-│  │  Private RPC │  │   Paid RPC   │  │  US Server   │                       │
-│  │  (Validator) │  │   (Helius,   │  │  (Compute)   │                       │
-│  │              │  │   Triton)    │  │              │                       │
-│  └──────────────┘  └──────────────┘  └──────────────┘                       │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                    │
-                                    ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                              SERVICES (Сервисы)                             │
-│                                                                             │
-│  ┌────────┐  ┌───────┐  ┌───────┐  ┌──────────┐  ┌─────────┐               │
-│  │ POLLER │→ │ PROXY │→ │ REDIS │→ │ DESERIAL │→ │ PRICING │               │
-│  └────────┘  └───────┘  └───────┘  └──────────┘  └─────────┘               │
-│                                                        │                    │
-│                                                        ▼                    │
-│  ┌─────────┐  ┌───────┐  ┌─────┐  ┌──────────┐  ┌──────────┐               │
-│  │ MEV_MON │→ │STRTEGY│← │ SIM │← │ SCHEDULER│← │  SIGNER  │               │
-│  └─────────┘  └───────┘  └─────┘  └──────────┘  └──────────┘               │
-│                                                                             │
-│  ┌─────────┐                                                                │
-│  │ METRICS │ → Prometheus / Grafana                                         │
-│  └─────────┘                                                                │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                    │
-                                    ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                              ONCHAIN (Smart Contracts)                      │
-│                                                                             │
-│  ┌─────────────────┐      ┌───────┐  ┌───────┐  ┌───────┐                  │
-│  │   AGGREGATOR    │ CPI→ │ Orca  │  │Raydium│  │Phoenix│                  │
-│  │ (swap router)   │      │       │  │ CLMM  │  │       │                  │
-│  └─────────────────┘      └───────┘  └───────┘  └───────┘                  │
-│                                                                             │
-│  ┌───────┐  ┌──────────────┐                                                │
-│  │ FLASH │  │ JITO BUNDLE  │                                                │
-│  │ LOAN  │  │ (MEV protect)│                                                │
-│  └───────┘  └──────────────┘                                                │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                    │
-                                    ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                              OPS (Operations)                               │
-│  ┌─────────┐  ┌──────────┐  ┌────────┐                                      │
-│  │ KEY_MAN │  │ BACKTEST │  │ ALERTS │                                      │
-│  │  (HSM)  │  │ (devnet) │  │        │                                      │
-│  └─────────┘  └──────────┘  └────────┘                                      │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
+The project is organized into four layers:
 
-## Структура проекта
+1. **Infrastructure:** a private validator RPC endpoint, paid RPC providers such as Helius and Triton, and a US-based compute server.
+2. **Services:** a pool poller, RPC proxy, Redis cache, pool deserializer, pricing engine, transaction signer, scheduler, simulator, strategy engine, MEV monitor, and metrics exported to Prometheus and Grafana.
+3. **On-chain execution:** an aggregator program that routes swaps through Orca, Raydium CLMM, and Phoenix via cross-program invocations (CPI), with flash-loan and Jito bundle components.
+4. **Operations:** HSM-backed key management, devnet backtesting, and alerts.
 
-```
+## Project structure
+
+```text
 solana-hft-bot/
-├── docs/                    # Документация
-│   ├── ARCHITECTURE.md      # Детальная архитектура
+├── docs/                    # Documentation
+│   ├── ARCHITECTURE.md      # Detailed architecture
 │   ├── IMPLEMENTATION_PLAN.md
 │   ├── TECH_STACK.md
 │   └── API_SPEC.md
-├── project-plan/            # План реализации
+├── project-plan/            # Implementation plan
 │   ├── 00_PROJECT_OVERVIEW.md
 │   ├── 01_PHASE_1_INFRA.md
 │   ├── 02_PHASE_2_SERVICES.md
@@ -79,46 +33,45 @@ solana-hft-bot/
 │   ├── 05_ROADMAP.md
 │   └── 06_STARTING_GUIDE.md
 ├── crates/                  # Rust workspace
-│   ├── bot-core/            # Ядро бота
-│   ├── rpc-proxy/           # RPC прокси сервис
-│   ├── pool-deserializer/   # Десериализатор пулов
-│   ├── pricing-engine/      # Ценовой движок
-│   ├── strategy/            # Стратегии маршрутизации
-│   ├── tx-builder/          # Сборка транзакций
-│   └── aggregator/          # On-chain агрегатор (Anchor)
-├── config/                  # Конфигурация
-├── scripts/                 # Скрипты деплоя
-└── docker/                  # Docker конфигурация
+│   ├── bot-core/            # Bot core
+│   ├── rpc-proxy/           # RPC proxy service
+│   ├── pool-deserializer/   # Pool deserializer
+│   ├── pricing-engine/      # Pricing engine
+│   ├── strategy/            # Routing strategies
+│   ├── tx-builder/          # Transaction builder
+│   └── aggregator/          # On-chain aggregator (Anchor)
+├── config/                  # Configuration
+├── scripts/                 # Deployment scripts
+└── docker/                  # Docker configuration
 ```
 
-## Быстрый старт
+## Quick start
 
 ```bash
-# Установка зависимостей
+# Build the project
 cargo build
 
-# Запуск тестов
+# Run the tests
 cargo test
 
-# Запуск бота (devnet)
+# Run the bot on devnet
 cargo run --bin hft-bot -- --config config/devnet.toml
 ```
 
-## Технологический стек
+## Technology stack
 
-- **Язык:** Rust
+- **Language:** Rust
 - **On-chain:** Anchor Framework
 - **Off-chain:** Tokio, Solana SDK, Jito SDK
-- **Кэш:** Redis
-- **Мониторинг:** Prometheus + Grafana
+- **Cache:** Redis
+- **Monitoring:** Prometheus and Grafana
 
-## Документация
+## Documentation
 
-- [Архитектура](docs/ARCHITECTURE.md)
-- [План реализации](docs/IMPLEMENTATION_PLAN.md)
-- [Технологический стек](docs/TECH_STACK.md)
+- [Architecture](docs/ARCHITECTURE.md)
+- [Implementation plan](docs/IMPLEMENTATION_PLAN.md)
+- [Technology stack](docs/TECH_STACK.md)
 
-## Лицензия
+## License
 
 MIT
-
