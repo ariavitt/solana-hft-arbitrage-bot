@@ -18,7 +18,7 @@ The project is organized into four layers:
 ## Project structure
 
 ```text
-solana-hft-bot/
+solana-hft-arbitrage-bot/
 ├── docs/                    # Documentation
 │   ├── ARCHITECTURE.md      # Detailed architecture
 │   ├── IMPLEMENTATION_PLAN.md
