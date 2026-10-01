@@ -1,19 +1,18 @@
-# Mainnet Simulate Configuration
-# For dry-run testing with real mainnet pool data
-# ⚠️ No actual transactions are sent!
+# Mainnet Deploy Configuration
+# Для деплоя и инициализации aggregator program на mainnet.
+# Не использовать для торгового цикла.
 
 [general]
-log_level = "debug"
-network = "mainnet-simulate"
+log_level = "info"
+network = "mainnet-beta"
 
 [wallet]
-keypair_path = "config/wallets/trading-mainnet.json"
+keypair_path = "config/wallets/deployer-mainnet.json"
 
 [aggregator]
 program_id = "DMCPSH38kwbcXxwyaHdXqEf4JCTdgdTwMJwcEMHPrEqK"
 
 [rpc]
-# Mainnet RPC for reading pool data
 primary_url = "https://api.mainnet-beta.solana.com"
 fallback_urls = []
 timeout_ms = 15000
@@ -21,11 +20,10 @@ max_retries = 3
 
 [redis]
 url = "redis://localhost:6379"
-pool_size = 10
+pool_size = 5
 cache_ttl_ms = 500
 
 [strategy]
-# Micro-arb profile: tiny edge, tiny size, more fills
 min_profit_bps = 1
 min_profit_lamports = 1
 max_slippage_bps = 100

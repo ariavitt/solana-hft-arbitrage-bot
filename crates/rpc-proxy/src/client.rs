@@ -164,6 +164,15 @@ impl RpcClientWrapper {
         ).await
     }
 
+    /// Get balance with retry
+    pub async fn get_balance(&self, pubkey: &Pubkey) -> Result<u64> {
+        let pk = *pubkey;
+        self.with_retry(
+            "getBalance",
+            || async move { self.client.get_balance(&pk).await },
+        ).await
+    }
+
     pub fn url(&self) -> String {
         self.client.url()
     }
@@ -172,4 +181,3 @@ impl RpcClientWrapper {
         &self.name
     }
 }
-

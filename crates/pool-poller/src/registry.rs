@@ -88,47 +88,58 @@ impl PoolRegistry {
         self.pools.is_empty()
     }
 
-    /// Load default pools (mainnet pools for dry-run/simulate)
-    pub fn load_defaults(&mut self, _network: &str) {
-        use crate::config::mainnet_pools;
+    /// Load default pools for the configured network
+    pub fn load_defaults(&mut self, network: &str) {
+        use crate::config::{devnet_pools, mainnet_pools};
         use std::str::FromStr;
 
         let sol_mint = Pubkey::from_str("So11111111111111111111111111111111111111112").unwrap();
         let usdc_mint = Pubkey::from_str("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v").unwrap();
         let usdt_mint = Pubkey::from_str("Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB").unwrap();
+        let use_devnet = network.eq_ignore_ascii_case("devnet");
 
-        // Always use mainnet pools - they exist and have real liquidity
-        // Safe for dry-run mode (no actual transactions sent)
-        
-        // Orca Whirlpool SOL/USDC
+        let (orca_sol_usdc, raydium_sol_usdc, network_label) = if use_devnet {
+            (
+                devnet_pools::orca_sol_usdc(),
+                devnet_pools::raydium_sol_usdc(),
+                "devnet",
+            )
+        } else {
+            (
+                mainnet_pools::orca_sol_usdc(),
+                mainnet_pools::raydium_sol_usdc(),
+                "mainnet",
+            )
+        };
+
         self.add_pool(PoolInfo {
-            address: mainnet_pools::orca_sol_usdc(),
+            address: orca_sol_usdc,
             pool_type: PoolType::OrcaWhirlpool,
             token_a: sol_mint,
             token_b: usdc_mint,
-            name: "Orca SOL/USDC (mainnet)".to_string(),
+            name: format!("Orca SOL/USDC ({})", network_label),
             enabled: true,
         });
-        
-        // Raydium CLMM SOL/USDC  
+
         self.add_pool(PoolInfo {
-            address: mainnet_pools::raydium_sol_usdc(),
+            address: raydium_sol_usdc,
             pool_type: PoolType::RaydiumClmm,
             token_a: sol_mint,
             token_b: usdc_mint,
-            name: "Raydium SOL/USDC (mainnet)".to_string(),
+            name: format!("Raydium SOL/USDC ({})", network_label),
             enabled: true,
         });
-        
-        // Orca Whirlpool SOL/USDT (for multi-hop routes)
-        self.add_pool(PoolInfo {
-            address: mainnet_pools::orca_sol_usdt(),
-            pool_type: PoolType::OrcaWhirlpool,
-            token_a: sol_mint,
-            token_b: usdt_mint,
-            name: "Orca SOL/USDT (mainnet)".to_string(),
-            enabled: true,
-        });
+
+        if !use_devnet {
+            self.add_pool(PoolInfo {
+                address: mainnet_pools::orca_sol_usdt(),
+                pool_type: PoolType::OrcaWhirlpool,
+                token_a: sol_mint,
+                token_b: usdt_mint,
+                name: format!("Orca SOL/USDT ({})", network_label),
+                enabled: true,
+            });
+        }
     }
 }
 
@@ -137,4 +148,3 @@ impl Default for PoolRegistry {
         Self::new()
     }
 }
-

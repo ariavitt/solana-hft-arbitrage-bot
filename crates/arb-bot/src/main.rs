@@ -16,6 +16,7 @@ use tracing_subscriber::FmtSubscriber;
 
 mod bot;
 mod executor;
+mod reporter;
 
 use bot::ArbBot;
 
@@ -39,6 +40,10 @@ struct Args {
     /// Initialize aggregator contract (run once)
     #[arg(long, default_value = "false")]
     init_aggregator: bool,
+
+    /// Prepare required token accounts for the first supported route and exit
+    #[arg(long, default_value = "false")]
+    prepare_accounts: bool,
 
     /// Auto-discover pools from Orca/Raydium APIs
     #[arg(long, default_value = "false")]
@@ -95,6 +100,13 @@ async fn main() -> Result<()> {
         return Ok(());
     }
 
+    if args.prepare_accounts {
+        info!("🧰 Preparing execution accounts for the first supported route...");
+        bot.prepare_accounts_for_next_route().await?;
+        info!("✅ Account preparation finished");
+        return Ok(());
+    }
+
     // Run main loop
     info!("🔄 Starting main loop...");
     bot.run().await?;
@@ -112,4 +124,3 @@ fn setup_metrics() -> Result<()> {
     info!("📊 Metrics available at http://localhost:9090/metrics");
     Ok(())
 }
-

@@ -19,7 +19,7 @@ pub mod state;
 
 use instructions::*;
 
-declare_id!("DMCPSH38kwbcXxwyaHdXqEf4JCTdgdTwMJwcEMHPrEqK");
+declare_id!("41pWaFUUTpWocERbe4D6G1jEuxya9XZRXMgXLwR9thSx");
 
 #[program]
 pub mod arbitrage_aggregator {

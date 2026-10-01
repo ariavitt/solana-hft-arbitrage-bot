@@ -5,6 +5,12 @@
 log_level = "debug"
 network = "devnet"
 
+[wallet]
+keypair_path = "config/wallets/deployer-devnet.json"
+
+[aggregator]
+program_id = "41pWaFUUTpWocERbe4D6G1jEuxya9XZRXMgXLwR9thSx"
+
 [rpc]
 # Публичный Solana devnet RPC (бесплатный)
 # Лимит: ~40 req/s, достаточно для разработки
@@ -26,14 +32,18 @@ pool_size = 10
 cache_ttl_ms = 500
 
 [strategy]
-# Минимальный профит в базисных пунктах (10 bps = 0.1%)
-min_profit_bps = 10
+# Минимальный профит в базисных пунктах
+min_profit_bps = 1
+# Минимальный абсолютный профит в lamports
+min_profit_lamports = 1
 # Максимальный slippage в базисных пунктах
 max_slippage_bps = 100
 # Максимум хопов в маршруте
 max_hops = 3
 # Минимальная ликвидность в USD
 min_liquidity_usd = 1000
+# Размер сделки в lamports
+trade_amount_lamports = 1000000
 
 [execution]
 # Цена compute unit в microlamports
@@ -43,4 +53,7 @@ compute_unit_limit = 400000
 # Использовать Jito bundle (false для devnet)
 use_jito = false
 jito_tip_lamports = 0
-
+allow_stateful_setup_in_dry_run = false
+opportunity_cooldown_secs = 1
+max_opportunities_per_cycle = 5
+target_trades_per_minute = 30

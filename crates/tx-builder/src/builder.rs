@@ -6,7 +6,8 @@ use crate::aggregator::{build_execute_arbitrage_ix, route_to_swap_legs};
 use bot_core::{config::ExecutionConfig, Route};
 use solana_sdk::{
     compute_budget::ComputeBudgetInstruction,
-    instruction::AccountMeta,
+    hash::Hash,
+    instruction::{AccountMeta, Instruction},
     message::Message,
     pubkey::Pubkey,
     signature::Keypair,
@@ -35,11 +36,27 @@ pub enum BuildError {
 pub struct TxBuilder {
     payer: Arc<Keypair>,
     config: ExecutionConfig,
+    aggregator_program_id: Pubkey,
 }
 
 impl TxBuilder {
-    pub fn new(payer: Arc<Keypair>, config: ExecutionConfig) -> Self {
-        Self { payer, config }
+    pub fn new(payer: Arc<Keypair>, config: ExecutionConfig, aggregator_program_id: Pubkey) -> Self {
+        Self {
+            payer,
+            config,
+            aggregator_program_id,
+        }
+    }
+
+    pub fn build_signed_tx(
+        &self,
+        instructions: Vec<Instruction>,
+        recent_blockhash: Hash,
+    ) -> Result<Transaction, BuildError> {
+        let message = Message::new(&instructions, Some(&self.payer.pubkey()));
+        let mut tx = Transaction::new_unsigned(message);
+        tx.sign(&[self.payer.as_ref()], recent_blockhash);
+        Ok(tx)
     }
 
     /// Build an arbitrage transaction using the aggregator contract
@@ -58,6 +75,7 @@ impl TxBuilder {
         max_slippage_bps: u16,
         base_token_account: &Pubkey,
         recent_blockhash: solana_sdk::hash::Hash,
+        setup_instructions: Vec<Instruction>,
         remaining_accounts: Vec<AccountMeta>,
     ) -> Result<Transaction, BuildError> {
         // Validate route
@@ -84,6 +102,8 @@ impl TxBuilder {
 
         let mut instructions = Vec::new();
 
+        instructions.extend(setup_instructions);
+
         // 1. Add compute budget instructions
         instructions.push(ComputeBudgetInstruction::set_compute_unit_limit(
             self.config.compute_unit_limit,
@@ -97,6 +117,7 @@ impl TxBuilder {
 
         // 3. Build aggregator execute_arbitrage instruction
         let execute_ix = build_execute_arbitrage_ix(
+            &self.aggregator_program_id,
             &self.payer.pubkey(),
             base_token_account,
             swap_legs,
@@ -119,11 +140,7 @@ impl TxBuilder {
         );
 
         // 4. Create and sign transaction
-        let message = Message::new(&instructions, Some(&self.payer.pubkey()));
-        let mut tx = Transaction::new_unsigned(message);
-        tx.sign(&[self.payer.as_ref()], recent_blockhash);
-
-        Ok(tx)
+        self.build_signed_tx(instructions, recent_blockhash)
     }
 
     /// Build a simple swap transaction (legacy, for testing)
@@ -152,11 +169,7 @@ impl TxBuilder {
             instructions.len()
         );
 
-        let message = Message::new(&instructions, Some(&self.payer.pubkey()));
-        let mut tx = Transaction::new_unsigned(message);
-        tx.sign(&[self.payer.as_ref()], recent_blockhash);
-
-        Ok(tx)
+        self.build_signed_tx(instructions, recent_blockhash)
     }
 
     /// Calculate minimum profit based on basis points
@@ -173,4 +186,3 @@ impl TxBuilder {
         self.payer.pubkey()
     }
 }
-

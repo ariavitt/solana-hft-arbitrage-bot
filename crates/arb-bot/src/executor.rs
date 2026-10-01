@@ -3,7 +3,9 @@
 use anyhow::Result;
 use rpc_proxy::RpcProxy;
 use solana_client::nonblocking::rpc_client::RpcClient;
+use solana_client::rpc_config::RpcSimulateTransactionConfig;
 use solana_sdk::{
+    commitment_config::CommitmentConfig,
     signature::Keypair,
     signer::Signer,
     transaction::Transaction,
@@ -29,11 +31,11 @@ impl Executor {
     pub fn new(
         rpc: Arc<RpcProxy>,
         keypair: Arc<Keypair>,
+        send_rpc_url: String,
         use_jito: bool,
         dry_run: bool,
     ) -> Self {
-        // Use mainnet RPC for simulate (pools exist there)
-        let send_client = RpcClient::new("https://api.mainnet-beta.solana.com".to_string());
+        let send_client = RpcClient::new(send_rpc_url);
         
         let jito_config = JitoConfig::default();
         let jito_client = if use_jito && !dry_run {
@@ -77,20 +79,31 @@ impl Executor {
     /// Simulate transaction (dry run)
     pub async fn simulate(&self, tx: &Transaction) -> Result<String> {
         let start = Instant::now();
-        
-        let result = self.send_client.simulate_transaction(tx).await?;
+        let config = RpcSimulateTransactionConfig {
+            sig_verify: false,
+            replace_recent_blockhash: true,
+            commitment: Some(CommitmentConfig::confirmed()),
+            ..Default::default()
+        };
+
+        let result = self
+            .send_client
+            .simulate_transaction_with_config(tx, config)
+            .await?;
         
         let elapsed = start.elapsed();
         debug!("Simulation completed in {:?}", elapsed);
 
         if let Some(err) = result.value.err {
             warn!("❌ Simulation failed: {:?}", err);
+            let err_text = format!("{:?}", err);
+
             if let Some(logs) = result.value.logs {
                 for log in &logs {
                     warn!("  {}", log);
                 }
             }
-            return Err(anyhow::anyhow!("Simulation failed: {:?}", err));
+            return Err(anyhow::anyhow!("Simulation failed: {}", err_text));
         }
 
         if let Some(logs) = result.value.logs {
@@ -110,11 +123,38 @@ impl Executor {
     /// Send transaction via standard RPC
     pub async fn send_transaction(&self, tx: &Transaction) -> Result<String> {
         let start = Instant::now();
-        
-        let sig = self.send_client
-            .send_and_confirm_transaction(tx)
-            .await
-            .map_err(|e| anyhow::anyhow!("Send failed: {}", e))?;
+
+        let mut tx = tx.clone();
+        let fresh_blockhash = self.send_client.get_latest_blockhash().await?;
+        tx.try_sign(&[self.keypair.as_ref()], fresh_blockhash)
+            .map_err(|e| anyhow::anyhow!("Failed to refresh transaction blockhash: {}", e))?;
+
+        let sig = match self.send_client.send_and_confirm_transaction(&tx).await {
+            Ok(sig) => sig,
+            Err(e) => {
+                let config = RpcSimulateTransactionConfig {
+                    sig_verify: false,
+                    replace_recent_blockhash: true,
+                    commitment: Some(CommitmentConfig::confirmed()),
+                    ..Default::default()
+                };
+
+                if let Ok(simulation) = self
+                    .send_client
+                    .simulate_transaction_with_config(&tx, config)
+                    .await
+                {
+                    if let Some(logs) = simulation.value.logs {
+                        warn!("❌ Send preflight logs:");
+                        for log in logs {
+                            warn!("  {}", log);
+                        }
+                    }
+                }
+
+                return Err(anyhow::anyhow!("Send failed: {}", e));
+            }
+        };
 
         let elapsed = start.elapsed();
         info!("✅ Transaction confirmed in {:?}: {}", elapsed, sig);
@@ -183,6 +223,11 @@ impl Executor {
         use solana_client::rpc_config::RpcSendTransactionConfig;
         use solana_sdk::commitment_config::CommitmentLevel;
 
+        let mut tx = tx.clone();
+        let fresh_blockhash = self.send_client.get_latest_blockhash().await?;
+        tx.try_sign(&[self.keypair.as_ref()], fresh_blockhash)
+            .map_err(|e| anyhow::anyhow!("Failed to refresh transaction blockhash: {}", e))?;
+
         let config = RpcSendTransactionConfig {
             skip_preflight: true,
             preflight_commitment: Some(CommitmentLevel::Processed),
@@ -190,7 +235,7 @@ impl Executor {
         };
 
         let sig = self.send_client
-            .send_transaction_with_config(tx, config)
+            .send_transaction_with_config(&tx, config)
             .await
             .map_err(|e| anyhow::anyhow!("Send failed: {}", e))?;
 

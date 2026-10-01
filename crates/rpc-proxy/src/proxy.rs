@@ -151,6 +151,11 @@ impl RpcProxy {
         Ok(results.into_iter().next().flatten())
     }
 
+    /// Get SOL balance
+    pub async fn get_balance(&self, pubkey: &Pubkey) -> Result<u64> {
+        self.primary.get_balance(pubkey).await
+    }
+
     async fn fetch_with_fallback(&self, pubkeys: &[Pubkey]) -> Result<Vec<Option<Account>>> {
         // Try primary first
         match self.primary.get_multiple_accounts(pubkeys).await {
@@ -205,4 +210,3 @@ impl RpcProxy {
         &self.config.rpc.primary_url
     }
 }
-

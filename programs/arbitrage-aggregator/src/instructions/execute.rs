@@ -176,7 +176,7 @@ fn execute_swap_leg<'info>(
 
 /// Orca Whirlpool swap via CPI
 fn execute_orca_swap<'info>(
-    _ctx: &Context<'_, '_, '_, 'info, ExecuteArbitrage<'info>>,
+    ctx: &Context<'_, '_, '_, 'info, ExecuteArbitrage<'info>>,
     leg: &SwapLeg,
     remaining_accounts: &[AccountInfo<'info>],
     start_index: usize,
@@ -184,6 +184,8 @@ fn execute_orca_swap<'info>(
     msg!("  → Orca Whirlpool swap: {} → min {}", leg.amount_in, leg.min_amount_out);
     
     crate::cpi::orca::swap_cpi(
+        &ctx.accounts.token_program.to_account_info(),
+        &ctx.accounts.authority.to_account_info(),
         remaining_accounts,
         start_index,
         leg.amount_in,
@@ -272,4 +274,3 @@ fn execute_openbook_swap<'info>(
 
     Ok(start_index + OPENBOOK_ACCOUNTS_NEEDED)
 }
-

@@ -22,6 +22,9 @@ tx-builder = { path = "../tx-builder" }
 # Solana
 solana-sdk.workspace = true
 solana-client.workspace = true
+spl-associated-token-account = "2.3"
+spl-token = "4.0"
+spl-token-2022 = "3.0"
 
 # Async
 tokio.workspace = true

@@ -26,25 +26,33 @@ struct ArbitragePath {
 
 pub struct ArbitrageStrategy {
     min_profit_bps: u16,
+    min_profit_lamports: i64,
     max_slippage_bps: u16,
     max_hops: usize,
     base_tokens: Vec<Pubkey>,
-    /// Trade amount in lamports (default 0.1 SOL = 100_000_000)
+    /// Trade amount in lamports
     trade_amount: u64,
 }
 
 impl ArbitrageStrategy {
     /// Simple constructor for use in bot
-    pub fn new(min_profit_bps: u16, max_slippage_bps: u16, max_hops: usize) -> Self {
+    pub fn new(
+        min_profit_bps: u16,
+        min_profit_lamports: i64,
+        max_slippage_bps: u16,
+        max_hops: usize,
+        trade_amount: u64,
+    ) -> Self {
         // Default base tokens: SOL (wrapped)
         let sol = Pubkey::from_str("So11111111111111111111111111111111111111112").unwrap();
         
         Self {
             min_profit_bps,
+            min_profit_lamports,
             max_slippage_bps,
             max_hops,
             base_tokens: vec![sol],
-            trade_amount: 100_000_000, // 0.1 SOL
+            trade_amount,
         }
     }
 
@@ -69,7 +77,9 @@ impl ArbitrageStrategy {
         
         for path in paths {
             if let Some(opp) = self.evaluate_path(&path, pricing) {
-                if opp.profit_bps >= self.min_profit_bps as i16 {
+                if opp.profit_bps >= self.min_profit_bps as i16
+                    && opp.expected_profit >= self.min_profit_lamports
+                {
                     info!(
                         "🎯 Found opportunity: {} -> {} -> {} | Profit: {} bps ({} lamports)",
                         self.format_pool(&path.buy_pool),
@@ -284,6 +294,10 @@ impl ArbitrageStrategy {
     pub fn min_profit_bps(&self) -> u16 {
         self.min_profit_bps
     }
+
+    pub fn min_profit_lamports(&self) -> i64 {
+        self.min_profit_lamports
+    }
 }
 
 #[cfg(test)]
@@ -323,7 +337,7 @@ mod tests {
 
     #[test]
     fn test_find_arbitrage_paths() {
-        let strategy = ArbitrageStrategy::new(10, 50, 3);
+        let strategy = ArbitrageStrategy::new(10, 0, 50, 3, 100_000_000);
         let mut pools = HashMap::new();
         
         // Add Orca pool
@@ -352,7 +366,7 @@ mod tests {
 
     #[test]
     fn test_profit_calculation() {
-        let strategy = ArbitrageStrategy::new(10, 50, 3);
+        let strategy = ArbitrageStrategy::new(10, 0, 50, 3, 100_000_000);
         
         // Test profit bps calculation
         let amount_in = 1_000_000_000u64; // 1 SOL

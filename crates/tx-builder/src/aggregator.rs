@@ -10,8 +10,10 @@ use solana_sdk::{
 };
 use std::str::FromStr;
 
-/// Our deployed aggregator program ID on devnet
-pub const AGGREGATOR_PROGRAM_ID: &str = "DMCPSH38kwbcXxwyaHdXqEf4JCTdgdTwMJwcEMHPrEqK";
+/// Default deployed aggregator program ID.
+/// Runtime code should prefer the value from bot config so we can
+/// switch to a redeployed program without recompiling the whole bot.
+pub const DEFAULT_AGGREGATOR_PROGRAM_ID: &str = "DMCPSH38kwbcXxwyaHdXqEf4JCTdgdTwMJwcEMHPrEqK";
 
 /// Token program ID
 pub const TOKEN_PROGRAM_ID: &str = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
@@ -60,19 +62,18 @@ pub mod instruction {
 }
 
 /// Build the config PDA
-pub fn get_config_pda() -> (Pubkey, u8) {
-    let program_id = Pubkey::from_str(AGGREGATOR_PROGRAM_ID).unwrap();
-    Pubkey::find_program_address(&[b"config"], &program_id)
+pub fn get_config_pda(program_id: &Pubkey) -> (Pubkey, u8) {
+    Pubkey::find_program_address(&[b"config"], program_id)
 }
 
 /// Build initialize instruction
 pub fn build_initialize_ix(
+    program_id: &Pubkey,
     owner: &Pubkey,
     treasury: &Pubkey,
     fee_bps: u16,
 ) -> Instruction {
-    let program_id = Pubkey::from_str(AGGREGATOR_PROGRAM_ID).unwrap();
-    let (config_pda, _bump) = get_config_pda();
+    let (config_pda, _bump) = get_config_pda(program_id);
 
     // Anchor discriminator + args
     let mut data = Vec::with_capacity(8 + 2);
@@ -80,7 +81,7 @@ pub fn build_initialize_ix(
     data.extend_from_slice(&fee_bps.to_le_bytes());
 
     Instruction {
-        program_id,
+        program_id: *program_id,
         accounts: vec![
             AccountMeta::new(*owner, true),           // owner (signer, payer)
             AccountMeta::new(config_pda, false),      // config PDA
@@ -93,6 +94,7 @@ pub fn build_initialize_ix(
 
 /// Build execute_arbitrage instruction
 pub fn build_execute_arbitrage_ix(
+    program_id: &Pubkey,
     authority: &Pubkey,
     base_token_account: &Pubkey,
     route: Vec<SwapLeg>,
@@ -100,8 +102,7 @@ pub fn build_execute_arbitrage_ix(
     max_slippage_bps: u16,
     remaining_accounts: Vec<AccountMeta>,
 ) -> Instruction {
-    let program_id = Pubkey::from_str(AGGREGATOR_PROGRAM_ID).unwrap();
-    let (config_pda, _bump) = get_config_pda();
+    let (config_pda, _bump) = get_config_pda(program_id);
     let token_program = Pubkey::from_str(TOKEN_PROGRAM_ID).unwrap();
 
     // Build instruction data
@@ -139,7 +140,7 @@ pub fn build_execute_arbitrage_ix(
     accounts.extend(remaining_accounts);
 
     Instruction {
-        program_id,
+        program_id: *program_id,
         accounts,
         data,
     }
@@ -168,7 +169,8 @@ mod tests {
 
     #[test]
     fn test_get_config_pda() {
-        let (pda, bump) = get_config_pda();
+        let program_id = Pubkey::from_str(DEFAULT_AGGREGATOR_PROGRAM_ID).unwrap();
+        let (pda, bump) = get_config_pda(&program_id);
         assert!(bump > 0 || bump == 0); // bump is valid
         println!("Config PDA: {}, bump: {}", pda, bump);
     }
@@ -177,7 +179,8 @@ mod tests {
     fn test_build_initialize_ix() {
         let owner = Pubkey::new_unique();
         let treasury = Pubkey::new_unique();
-        let ix = build_initialize_ix(&owner, &treasury, 10);
+        let program_id = Pubkey::from_str(DEFAULT_AGGREGATOR_PROGRAM_ID).unwrap();
+        let ix = build_initialize_ix(&program_id, &owner, &treasury, 10);
         
         assert_eq!(ix.accounts.len(), 4);
         assert!(!ix.data.is_empty());
@@ -206,4 +209,3 @@ mod tests {
         println!("SwapLeg serialization works");
     }
 }
-
