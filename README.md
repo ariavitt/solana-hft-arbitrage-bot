@@ -1,58 +1,105 @@
 # Solana HFT Arbitrage Bot
 
-> A high-frequency trading, arbitrage, and swap bot for the Solana blockchain.
+Rust workspace for discovering arbitrage opportunities across Solana DEX pools, building swap transactions, and evaluating execution through simulation.
 
-## Overview
+**Status:** experimental implementation. Orca Whirlpool and Raydium CLMM have CPI adapters; end-to-end execution depends on pool accounts and a compatible deployed aggregator. Raydium AMM, Phoenix, and OpenBook execution handlers are placeholders. No production readiness or profitability is claimed.
 
-A low-latency bot for arbitrage across Solana decentralized exchanges (DEXs), designed to execute trades atomically.
+## Components
 
-## Architecture
+| Component | Responsibility |
+| --- | --- |
+| `arb-bot` | CLI, orchestration, execution, and action reports |
+| `bot-core` | Shared types and configuration |
+| `pool-poller` | Pool registry, discovery, and state updates |
+| `pool-deserializer` | Orca and Raydium pool account parsing |
+| `rpc-proxy` | RPC access, retries, and Redis caching |
+| `pricing-engine` | Quotes and pool graph |
+| `strategy` | Arbitrage route evaluation |
+| `tx-builder` | Transaction assembly, simulation, and Jito client |
+| `arbitrage-aggregator` | Anchor program with CPI routing and profit checks |
 
-The project is organized into four layers:
+## Getting started
 
-1. **Infrastructure:** a private validator RPC endpoint, paid RPC providers such as Helius and Triton, and a US-based compute server.
-2. **Services:** a pool poller, RPC proxy, Redis cache, pool deserializer, pricing engine, transaction signer, scheduler, simulator, strategy engine, MEV monitor, and metrics exported to Prometheus and Grafana.
-3. **On-chain execution:** an aggregator program that routes swaps through Orca, Raydium CLMM, and Phoenix via cross-program invocations (CPI), with flash-loan and Jito bundle components.
-4. **Operations:** HSM-backed key management, devnet backtesting, and alerts.
+### Requirements
 
-## Project structure
+- Rust stable with Cargo, as configured in `rust-toolchain.toml`.
+- Redis for the RPC cache.
+- Solana CLI for creating a development keypair.
+- An RPC endpoint and pool accounts for the selected network.
 
-```text
-solana-hft-arbitrage-bot/
-├── crates/                  # Rust workspace
-│   ├── bot-core/            # Bot core
-│   ├── rpc-proxy/           # RPC proxy service
-│   ├── pool-deserializer/   # Pool deserializer
-│   ├── pricing-engine/      # Pricing engine
-│   ├── strategy/            # Routing strategies
-│   ├── tx-builder/          # Transaction builder
-│   └── aggregator/          # On-chain aggregator (Anchor)
-├── config/                  # Configuration
-├── scripts/                 # Deployment scripts
-└── docker/                  # Docker configuration
-```
-
-## Quick start
+Build and run the workspace tests:
 
 ```bash
-# Build the project
-cargo build
-
-# Run the tests
-cargo test
-
-# Run the bot on devnet
-cargo run --bin hft-bot -- --config config/devnet.toml
+git clone https://github.com/ariavitt/solana-hft-arbitrage-bot.git
+cd solana-hft-arbitrage-bot
+cargo build --workspace --locked
+cargo test --workspace --locked
 ```
 
-## Technology stack
+Start a local Redis instance, for example with Docker:
 
-- **Language:** Rust
-- **On-chain:** Anchor Framework
-- **Off-chain:** Tokio, Solana SDK, Jito SDK
-- **Cache:** Redis
-- **Monitoring:** Prometheus and Grafana
+```bash
+docker run --name solana-arb-redis -d -p 127.0.0.1:6379:6379 redis:7-alpine
+```
+
+Create a development keypair at the path used by the devnet configuration:
+
+```bash
+mkdir -p config/wallets
+solana-keygen new --outfile config/wallets/deployer-devnet.json
+```
+
+Review `config/devnet.toml`, especially the RPC endpoint, wallet path, and aggregator program ID. The configured program must exist on that network and match the local instruction layout. Pool discovery and configured pools must also match the network.
+
+Start in simulation mode:
+
+```bash
+cargo run --locked --bin arb-bot -- --config config/devnet.toml --dry-run
+```
+
+`--dry-run` may fall back to local validation when on-chain simulation fails; a locally validated route does not confirm on-chain execution. Keep `execution.allow_stateful_setup_in_dry_run = false` to avoid sending account-setup transactions during simulation. A keypair is still required in this mode.
+
+List all CLI options:
+
+```bash
+cargo run --locked --bin arb-bot -- --help
+```
+
+## Configuration
+
+| File | Purpose |
+| --- | --- |
+| `config/devnet.toml` | Development and simulation on devnet |
+| `config/mainnet-simulate.toml` | Mainnet simulation configuration; use with `--dry-run` |
+| `config/mainnet.toml` | Mainnet execution configuration |
+| `config/mainnet-deploy.toml` | Aggregator deployment configuration |
+| `Anchor.toml` | Anchor network and program settings |
+
+Execution settings control slippage, compute budget, Jito use, cooldowns, and trade frequency. Wallet files, local credentials, and generated reports are excluded from version control.
+
+## Monitoring
+
+The bot exposes Prometheus metrics at `http://localhost:9090/metrics` and writes action reports to `reports/`.
+
+To view the included dashboard, run this command from the repository root:
+
+```bash
+python3 server.py
+```
+
+Open `http://localhost:8080/dashboard.html`. The Python server proxies metrics from the running bot.
+
+## Repository layout
+
+```text
+crates/                         Rust services and shared libraries
+programs/arbitrage-aggregator/   Anchor program and program tests
+config/                         Network configurations
+scripts/                        Setup and operational helpers
+dashboard.html                  Metrics dashboard
+server.py                       Dashboard server and metrics proxy
+```
 
 ## License
 
-MIT
+[MIT](LICENSE).

@@ -1,6 +1,5 @@
 # Rust
 /target/
-Cargo.lock
 
 # IDE
 .idea/
@@ -14,9 +13,11 @@ Cargo.lock
 .env.local
 .env.*.local
 
-# Keys (NEVER commit!)
-*.json
-!config/*.toml
+# Wallets and private keys
+config/wallets/
+*-keypair.json
+keypair.json
+id.json
 
 # Logs
 *.log
@@ -29,3 +30,9 @@ Thumbs.db
 # Solana
 test-ledger/
 
+
+# Generated runtime output
+reports/
+.anchor/
+__pycache__/
+*.pyc

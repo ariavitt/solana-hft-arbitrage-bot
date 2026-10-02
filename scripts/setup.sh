@@ -1,56 +1,35 @@
-#!/bin/bash
-# Setup script for Solana HFT Bot
+#!/usr/bin/env bash
+# Prepare local dependencies and build the Rust workspace.
+set -euo pipefail
 
-set -e
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
-echo "=== Solana HFT Bot Setup ==="
-echo ""
+for dependency in cargo rustc solana docker; do
+    if ! command -v "$dependency" >/dev/null 2>&1; then
+        echo "Missing prerequisite: $dependency. See README.md." >&2
+        exit 1
+    fi
+done
 
-# Check Rust
-if ! command -v rustc &> /dev/null; then
-    echo "Installing Rust..."
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-    source $HOME/.cargo/env
-else
-    echo "✓ Rust is installed: $(rustc --version)"
+if ! docker info >/dev/null 2>&1; then
+    echo "Docker is not running. Start Docker and retry." >&2
+    exit 1
 fi
 
-# Check Solana CLI
-if ! command -v solana &> /dev/null; then
-    echo "Installing Solana CLI..."
-    sh -c "$(curl -sSfL https://release.solana.com/v1.18.4/install)"
-    export PATH="$HOME/.local/share/solana/install/active_release/bin:$PATH"
+container_name="solana-arb-redis"
+if docker container inspect "$container_name" >/dev/null 2>&1; then
+    docker start "$container_name" >/dev/null
 else
-    echo "✓ Solana CLI is installed: $(solana --version)"
+    docker run --name "$container_name" -d -p 127.0.0.1:6379:6379 redis:7-alpine >/dev/null
 fi
 
-# Check Docker
-if ! command -v docker &> /dev/null; then
-    echo "⚠ Docker is not installed. Please install Docker manually."
-else
-    echo "✓ Docker is installed: $(docker --version)"
-fi
+cargo build --workspace --locked
 
-# Check Redis
-if docker ps | grep -q redis; then
-    echo "✓ Redis is running"
-else
-    echo "Starting Redis..."
-    docker run -d --name redis -p 6379:6379 redis:7-alpine 2>/dev/null || \
-    docker start redis 2>/dev/null || \
-    echo "⚠ Could not start Redis. Please start it manually."
-fi
+cat <<'NEXT_STEPS'
+Build complete. Redis is running on localhost:6379.
 
-# Build project
-echo ""
-echo "Building project..."
-cargo build
-
-echo ""
-echo "=== Setup Complete ==="
-echo ""
-echo "Next steps:"
-echo "1. Configure RPC endpoints in config/devnet.toml or config/mainnet.toml"
-echo "2. Run tests: cargo test"
-echo "3. Start the bot: cargo run --bin hft-bot -- --config config/devnet.toml"
-
+Next steps:
+1. Create a development keypair and review config/devnet.toml (see README.md).
+2. Run tests: cargo test --workspace --locked
+3. Start simulation: cargo run --locked --bin arb-bot -- --config config/devnet.toml --dry-run
+NEXT_STEPS

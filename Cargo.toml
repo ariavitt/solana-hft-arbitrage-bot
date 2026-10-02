@@ -17,8 +17,8 @@ version = "0.1.0"
 edition = "2021"
 rust-version = "1.75"
 license = "MIT"
-authors = ["HFT Bot Team"]
-repository = "https://github.com/your-org/solana-hft-bot"
+authors = ["ariavitt"]
+repository = "https://github.com/ariavitt/solana-hft-arbitrage-bot"
 
 [workspace.dependencies]
 # === Solana ===
