@@ -19,19 +19,6 @@ The project is organized into four layers:
 
 ```text
 solana-hft-arbitrage-bot/
-├── docs/                    # Documentation
-│   ├── ARCHITECTURE.md      # Detailed architecture
-│   ├── IMPLEMENTATION_PLAN.md
-│   ├── TECH_STACK.md
-│   └── API_SPEC.md
-├── project-plan/            # Implementation plan
-│   ├── 00_PROJECT_OVERVIEW.md
-│   ├── 01_PHASE_1_INFRA.md
-│   ├── 02_PHASE_2_SERVICES.md
-│   ├── 03_PHASE_3_ONCHAIN.md
-│   ├── 04_PHASE_4_OPS.md
-│   ├── 05_ROADMAP.md
-│   └── 06_STARTING_GUIDE.md
 ├── crates/                  # Rust workspace
 │   ├── bot-core/            # Bot core
 │   ├── rpc-proxy/           # RPC proxy service
@@ -65,12 +52,6 @@ cargo run --bin hft-bot -- --config config/devnet.toml
 - **Off-chain:** Tokio, Solana SDK, Jito SDK
 - **Cache:** Redis
 - **Monitoring:** Prometheus and Grafana
-
-## Documentation
-
-- [Architecture](docs/ARCHITECTURE.md)
-- [Implementation plan](docs/IMPLEMENTATION_PLAN.md)
-- [Technology stack](docs/TECH_STACK.md)
 
 ## License
 
